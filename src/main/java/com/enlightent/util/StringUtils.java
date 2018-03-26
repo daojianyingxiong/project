@@ -1,14 +1,13 @@
 package com.enlightent.util;
 
-import com.enlightent.been.StaticString;
-
-import javax.servlet.http.HttpServletRequest;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import javax.servlet.http.HttpServletRequest;
 
 public class StringUtils {
 	public static String hideNumbers(String phone){
@@ -190,50 +189,6 @@ public class StringUtils {
 			e.printStackTrace();
 		}
 		return parseDouble;
-	}
-
-	/**
-	 * 获取 形式 如"剧名 (类型)" name 实际的剧名
-	 * 如 "夏至未至 (电视剧)" 返回 "夏至未至"
-	 * @param name "剧名 (类型)" 如 "夏至未至 (电视剧)"
-	 * @return 实际的剧名
-	 */
-	public static  String realName(String name) {
-		if (name.endsWith(StaticString.MOVIE)) {
-			name = name.substring(0, name.length() - StaticString.MOVIE.length());
-		} else if (name.endsWith(StaticString.TV)) {
-			name = name.substring(0, name.length() - StaticString.TV.length());
-		} else if (name.endsWith(StaticString.HUA_XU)) {
-			name = name.substring(0, name.length() - StaticString.HUA_XU.length());
-		} else if (name.endsWith(StaticString.ART)) {
-			name = name.substring(0, name.length() - StaticString.ART.length());
-		} else if (name.endsWith(StaticString.ANIMATION)) {
-			name = name.substring(0, name.length() - StaticString.ANIMATION.length());
-		}
-		return name;
-	}
-
-	/**
-	 * 获取 "剧名 (类型)"的英文key
-	 * 如 "夏至未至 (电视剧)" 返回 "tv"
-	 *
-	 * @param name "剧名 (类型)" 如 "夏至未至 (电视剧)"
-	 * @return 类型对应的英文key
-	 */
-	public static String getFirstKey(String name) {
-		String firstKey = "";
-		if (name.endsWith(StaticString.MOVIE)) {
-			firstKey = "movie";
-		} else if (name.endsWith(StaticString.TV)) {
-			firstKey = "tv";
-		} else if (name.endsWith(StaticString.HUA_XU)) {
-			firstKey = "tv:hua_xu";
-		} else if (name.endsWith(StaticString.ART)) {
-			firstKey = "art";
-		} else if (name.endsWith(StaticString.ANIMATION)) {
-			firstKey = "animation";
-		}
-		return firstKey;
 	}
 
 	public static String collectionToDelimitedString(Collection<?> coll, String delim, String prefix, String suffix) {

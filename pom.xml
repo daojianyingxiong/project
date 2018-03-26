@@ -4,11 +4,11 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>com.enlightent</groupId>
-	<artifactId>schedule</artifactId>
+	<artifactId>trend-analytics</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<packaging>war</packaging>
 
-	<name>schedule</name>
+	<name>trend-analytics</name>
 
 	<parent>
 		<groupId>org.springframework.boot</groupId>
@@ -183,7 +183,7 @@
 	</dependencies>
 
 	<build>
-		<finalName>schedule</finalName>
+		<finalName>trend-analytics</finalName>
 		<plugins>
 			<plugin>
 				<groupId>org.springframework.boot</groupId>

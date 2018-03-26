@@ -8,7 +8,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import com.enlightent.been.Paging;
 import com.google.gson.Gson;
 import com.mongodb.util.JSON;
 @SuppressWarnings("all")
@@ -36,34 +35,6 @@ public class JsonUtil {
 		return resultMap;
 	}
 	
-	private static Paging analyzeHits(Map fromJson, boolean showId) {
-		try {
-			Paging paging = new Paging();
-			Object object = fromJson.get("total");
-			if (object != null) {
-				Integer tInteger = (Integer)object;
-				if (tInteger > 9990) {
-					tInteger = 9990;
-				}
-				paging.setTotal(tInteger.longValue());
-			}
-			List<Map> list = (List<Map>) fromJson.get("hits");
-			List<Map> sources = new ArrayList<>(list.size());
-			for (Map map : list) {
-				Map sourceMap = (Map)map.get("_source");
-				if (showId) {
-					sourceMap.put("_id", map.get("_id"));
-					sourceMap.put("_index", map.get("_index"));
-				}
-				sources.add(sourceMap);
-			}
-			paging.setRows(sources);
-			return paging;
-		} catch (Exception e) {
-			e.printStackTrace();
-			return null;
-		}
-	}
 	
 	private static List<Map> analyzeAggs(Map aggregations, List<Map> results, Map part) {
 		if (results == null) {
@@ -112,20 +83,6 @@ public class JsonUtil {
 					}
 				}
 			}
-		}
-		return results;
-	}
-	
-	public static List<Map> analyzeEsResult(String jsonData) {
-		Map fromJson = (Map) JSON.parse(jsonData);
-		Map aggregations = (Map) fromJson.get("aggregations");
-		List<Map> results = null;
-		if (aggregations != null) {
-			results = analyzeAggs(aggregations);
-		} else {
-			fromJson = (Map) fromJson.get("hits");
-			Paging analyzeHits = JsonUtil.analyzeHits(fromJson, false);
-			results = analyzeHits.getRows();
 		}
 		return results;
 	}
