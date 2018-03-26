@@ -1,0 +1,28 @@
+<configuration scan="true" scanPeriod="10 seconds">
+  <appender name="INFO_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <Prudent>true</Prudent>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_PATH}/%d{yyyyMMdd}.log</fileNamePattern>
+        </rollingPolicy>
+        <layout class="ch.qos.logback.classic.PatternLayout">
+            <Pattern>
+            	%d{yyyy-MM-dd HH:mm:ss}-%msg%n
+            </Pattern>
+        </layout>
+    </appender>
+
+    <logger name="com.enlightent.service.DataMonitorService" level="info" additivity="false">  
+	    <appender-ref ref="INFO_FILE" />  
+	</logger>
+	
+	<appender name="stdout" class="ch.qos.logback.core.ConsoleAppender">  
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">  
+            <Pattern>%date{yyyy-MM-dd HH:mm:ss.SSS} %-5level[%thread]%logger{56}.%method:%L -%msg%n</Pattern>  
+        </encoder>  
+    </appender>
+    
+     <root level="INFO">  
+        <appender-ref ref="stdout" />
+    </root>
+    
+</configuration>

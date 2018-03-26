@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+    <title>Quartz任务列表</title>
+    <link rel="stylesheet" href="https://unpkg.com/element-ui@2.0.5/lib/theme-chalk/index.css">
+   	<script src="https://cdn.bootcss.com/vue/2.5.13/vue.min.js"></script>
+    <script src="https://cdn.bootcss.com/vue-resource/1.3.4/vue-resource.js"></script>
+    <script src="https://unpkg.com/element-ui@2.0.5/lib/index.js"></script>
+
+    <style>      
+        #top {
+            background:#20A0FF;
+            padding:5px;
+            overflow:hidden
+        }
+        body {
+            position: relative;
+            min-height: 100vh;
+            margin: 0;
+        }
+        ul, li {
+            list-style: none;
+        }
+        .clearfix:after {
+            content: " ";
+            display: block;
+            height: 0;
+            clear: both;
+            visibility: hidden;
+        }
+        .modal {
+            position: fixed;
+            top: 45%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #fff;
+            transition: .5s ease-out;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, .5);
+            border-radius: 6px;
+            z-index: -1;
+            max-height: 60vh;
+            max-width: 80vw;
+            overflow: auto;
+        }
+        .modal.fade {
+            opacity: 0;
+        }
+        .modal.in {
+            z-index: 6666;
+            opacity: 1;
+        }
+        .modal-header button {
+            float: right;
+            font-size: 21px;
+            font-weight: bold;
+            line-height: 1;
+            color: #000;
+            text-shadow: 0 1px 0 #fff;
+            background-color: transparent;
+            border: none;
+            cursor: pointer;
+            margin: 10px;
+        }
+        .modal-body li {
+            border-bottom: 1px solid #eee;
+        }
+        .modal-body div pre {
+            margin: 0;
+        }
+        .modal-body div.key {
+            width: 15%;
+            float: left;
+            text-align: center
+        }
+        .modal-body div.value {
+            width: 83%;
+            float: right;
+        }
+        .el-input {
+            width: auto;
+        }
+    </style>
+
+</head>
+<body>
+    <div id="test">             
+
+        <div id="top">  
+            <el-input type="text" v-model="searchKeyword" placeholder="请输入任务ID搜索"></el-input>
+            <el-button @click="search">搜索</el-button>
+        </div>  
+
+        <div style="margin-top:15px">   
+
+            <el-table
+                ref="testTable"       
+                :data="tableData"
+                style="width:100%"
+                border
+                :default-sort = "{prop: 'next_FIRE_TIME', order: 'ascending'}"
+                @sort-change="sortChange"
+                >
+
+                <el-table-column
+                    prop="job_NAME"
+                    label="任务ID"
+                    sortable="custom"
+                    show-overflow-tooltip>
+                </el-table-column>
+                <el-table-column
+                    prop="scheduleTask.title"
+                    label="任务标题">
+                </el-table-column>
+                 <el-table-column
+                    prop="cron_EXPRESSION"
+                    label="cron_EXPRESSION">
+                </el-table-column>
+                <el-table-column
+                    prop="trigger_STATE"
+                    label="状态">
+                </el-table-column>
+                <el-table-column
+                    prop="start_TIME"
+                    :formatter="dateFormat"
+                    sortable="custom"
+                    label="开始执行时间">
+                </el-table-column>
+                <el-table-column
+                    prop="prev_FIRE_TIME"
+                    :formatter="dateFormat"
+                    sortable="custom"
+                    label="上次执行时间">
+                </el-table-column>
+                <el-table-column
+                    prop="next_FIRE_TIME"
+                    :formatter="dateFormat"
+                    sortable="custom"
+                    label="下次执行时间">
+                </el-table-column>
+                <el-table-column label="操作" width="300">
+                    <template scope="scope">
+                        <el-button
+                        size="small"
+                        type="success"
+                        @click="showModal(scope.$index)">查看</el-button>
+                    </template>
+                </el-table-column>
+            </el-table>
+
+            <div align="center">
+                <el-pagination
+                    @size-change="handleSizeChange"
+                    @current-change="handleCurrentChange"
+                    :current-page="currentPage"
+                    :page-sizes="[10, 20, 30, 40]"
+                    :page-size="pagesize"
+                    layout="total, sizes, prev, pager, next, jumper"
+                    :total="totalCount">
+                </el-pagination>
+            </div>
+        </div> 
+
+        <el-dialog title="添加任务" :visible.syn="dialogFormVisible">
+            <el-form :model="form">
+                <el-form-item label="任务名称" label-width="120px" style="width:35%">
+                <el-input v-model="form.jobName" auto-complete="off"></el-input>
+                </el-form-item>     
+                <el-form-item label="任务分组" label-width="120px" style="width:35%">
+                <el-input v-model="form.jobGroup" auto-complete="off"></el-input>
+                </el-form-item>
+                <el-form-item label="表达式" label-width="120px" style="width:35%">
+                <el-input v-model="form.cronExpression" auto-complete="off"></el-input>
+                </el-form-item>
+            </el-form>
+            <div slot="footer" class="dialog-footer">
+                <el-button @click="dialogFormVisible = false">取 消</el-button>
+                <el-button type="primary" @click="add">确 定</el-button>
+            </div>
+        </el-dialog>
+
+        <el-dialog title="修改任务" :visible.syn="updateFormVisible">
+            <el-form :model="updateform">
+                <el-form-item label="表达式" label-width="120px" style="width:35%">
+                <el-input v-model="updateform.cronExpression" auto-complete="off"></el-input>
+                </el-form-item>
+            </el-form>
+            <div slot="footer" class="dialog-footer">
+                <el-button @click="updateFormVisible = false">取 消</el-button>
+                <el-button type="primary" @click="update">确 定</el-button>
+            </div>
+        </el-dialog>
+
+		<div class="modal fade" :class="{ in: modalShow }">
+            <div class="modal-header clearfix">
+                <button @click="closeModal">&times;</button>
+            </div>
+			<div class="modal-body">
+                <ul v-for="(val, key) in modalJson">
+                    <li class="clearfix">
+                        <div class="key"> {{ key }}：</div>
+                        <div class="value"><pre>{{ val }}</pre></div>
+                    </li>
+                </ul>
+            </div>
+		</div>
+    </div>
+
+    <footer align="center">
+    </footer>
+    
+
+    <script>
+    Date.prototype.format = function(format) {
+        var date = {
+            "M+": this.getMonth() + 1,
+            "d+": this.getDate(),
+            "h+": this.getHours(),
+            "m+": this.getMinutes(),
+            "s+": this.getSeconds(),
+            "q+": Math.floor((this.getMonth() + 3) / 3),
+            "S+": this.getMilliseconds()
+        };
+        if (/(y+)/i.test(format)) {
+            format = format.replace(RegExp.$1, (this.getFullYear() + '').substr(4 - RegExp.$1.length));
+        }
+        for (var k in date) {
+            if (new RegExp("(" + k + ")").test(format)) {
+                format = format.replace(RegExp.$1, RegExp.$1.length == 1
+                    ? date[k] : ("00" + date[k]).substr(("" + date[k]).length));
+            }
+        }
+        return format;
+    };
+    
+    
+    var vue = new Vue({         
+            el:"#test",
+            data: {       
+                //表格当前页数据
+                tableData: [],
+
+                //请求的URL
+                url:'job/queryjob',
+
+                //默认每页数据量
+                pagesize: 10,               
+
+                //当前页码
+                currentPage: 1,
+
+                //查询的页码
+                start: 1,
+
+                //默认数据总数
+                totalCount: 1000,
+
+                //添加对话框默认可见性
+                dialogFormVisible: false,
+
+                //修改对话框默认可见性
+                updateFormVisible: false,
+
+                //提交的表单
+                form: {
+                    jobName: '',
+                    jobGroup: '',
+                    cronExpression: '',
+                  },
+
+                updateform: {
+                    jobName: '',
+                    jobGroup: '',
+                    cronExpression: '',
+                },
+                
+                modalJson: '',
+
+                modalShow: false,
+
+                searchKeyword: '',
+                
+                sort: 'next_FIRE_TIME',
+                
+                order: 'asc'
+            },
+			
+            methods: {
+
+                //从服务器读取数据
+                loadData: function(pageNum, pageSize, sort, order){  
+                    var url = `job/queryjob?pageNum=${pageNum}&pageSize=${pageSize}&jobName=${this.searchKeyword}&sort=${sort}&order=${order}`;
+                    this.$http.get(url).then(function(res){
+                        this.tableData = res.body.rows;
+                        this.totalCount = res.body.total;
+                    },function(){
+                        console.log('failed');
+                    });                 
+                }, 
+
+                //搜索
+                search: function(){
+                    this.loadData(this.currentPage, this.pagesize, this.sort, this.order);
+                },
+
+                //添加
+                add: function(){
+                    this.$http.post('schedule/job/addjob',{"jobClassName":this.form.jobName,"jobGroupName":this.form.jobGroup,"cronExpression":this.form.cronExpression},{emulateJSON: true}).then(function(res){
+                        this.loadData(this.currentPage, this.pagesize, this.sort, this.order);
+                        this.dialogFormVisible = false;
+                    },function(){
+                        console.log('failed');
+                    });
+                },
+
+                //更新任务
+                update: function(){
+                    this.$http.post
+                    ('job/reschedulejob',
+                            {"jobClassName":this.updateform.jobName,
+                             "jobGroupName":this.updateform.jobGroup,
+                             "cronExpression":this.updateform.cronExpression
+                             },{emulateJSON: true}
+                    ).then(function(res){
+                        this.loadData(this.currentPage, this.pagesize, this.sort, this.order);
+                        this.updateFormVisible = false;
+                    },function(){
+                        console.log('failed');
+                    });
+
+                },
+
+                //每页显示数据量变更
+                handleSizeChange: function(val) {
+                    this.pagesize = val;
+                    this.loadData(this.currentPage, this.pagesize, this.sort, this.order);
+                },
+
+                //页码变更
+                handleCurrentChange: function(val) {
+                    this.currentPage = val;
+                    this.loadData(this.currentPage, this.pagesize, this.sort, this.order);
+                },        
+				
+                //数据展示
+                showModal: function (modalId) {
+                	this.modalJson = this.tableData[modalId].scheduleTask;
+                	this.modalShow = true;
+                },
+
+                closeModal: function (modalId) {
+                    this.modalShow = false;
+                },
+                
+                //时间格式化
+              //时间格式化  
+              dateFormat:function(row, column) {
+            	  
+                  var date = row[column.property];  
+	              if (date == undefined) {  
+	                 return "";  
+	              }else if(date == -1){
+	            	  return "等待执行"
+	              }  
+	              
+              	  return new Date(date).format('yyyy-MM-dd hh:mm:ss'); 
+              },
+              sortChange (params) {
+                  this.sort = params.prop;
+                  this.order = params.order == 'descending' ? 'desc' : 'asc';
+                  this.currentPage = 1;
+                  
+                  this.loadData(this.currentPage, this.pagesize, this.sort, this.order);
+              }
+            }
+
+          });
+
+          //载入数据
+          //vue.loadData(vue.currentPage, vue.pagesize, vue.sort, vue.order);
+    </script>  
+
+</body>
+</html>
